@@ -88,8 +88,24 @@
       <div id="ovFoot">Тап по клетке — прицел · ещё тап — подтвердить установку</div>
     </div>
   </div>
+</div>
 
-  <div id="rotate">Поверните телефон вертикально</div>
+<!--
+    Защита портретного режима.
+    Если мобильный телефон находится в горизонтальной ориентации,
+    показывается этот оверлей вместо игры.
+-->
+<div id="portrait-rotate-overlay" role="alert" aria-live="assertive">
+  <div class="portrait-rotate-box">
+    <div class="portrait-rotate-icon">📱</div>
+    <div class="portrait-rotate-text">
+      ПОВЕРНИТЕ ТЕЛЕФОН<br>
+      ВЕРТИКАЛЬНО
+    </div>
+    <div class="portrait-rotate-subtext">
+      Игра работает только в портретном режиме
+    </div>
+  </div>
 </div>
 
 <script src="js/core.js"></script>
