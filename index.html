@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#05070c">
+<title>SKYNET ASSAULT — Tower Defense</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+<div id="stage">
+  <canvas id="game"></canvas>
+  <div id="scanlines"></div>
+  <div id="vignette"></div>
+
+  <!-- ============ HUD ============ -->
+  <header id="hud">
+    <div class="hud-col">
+      <div class="chip chip-hp"><i class="ico ico-heart"></i><b id="hpVal">100</b>
+        <div class="bar"><span id="hpBar"></span></div>
+      </div>
+      <div class="chip chip-wave"><i class="ico ico-skull"></i><span id="waveTxt">1/6</span></div>
+    </div>
+    <div class="hud-mid">
+      <div id="lvlName">РЖАВЫЕ ПОЛЯ</div>
+      <div id="lvlSub">УРОВЕНЬ 1 · СЕКТОР A-7</div>
+    </div>
+    <div class="hud-col right">
+      <div class="chip chip-scrap"><i class="ico ico-bolt"></i><b id="scrapVal">300</b></div>
+      <div class="hud-btns">
+        <button id="btnMenu" class="ib" title="Главное меню">≡</button>
+        <button id="btnSpeed" class="ib" title="Скорость">1×</button>
+        <button id="btnPause" class="ib" title="Пауза">II</button>
+        <button id="btnSound" class="ib" title="Звук">♪</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Boss bar -->
+  <div id="bossBar"><span id="bossFill"></span><em id="bossName">ТИТАН</em></div>
+
+  <!-- Wave announce -->
+  <div id="announce"><div class="an-in"><b id="anTitle"></b><span id="anSub"></span></div></div>
+
+  <!-- ============ SHOP ============ -->
+  <div id="placeHint"><span id="placeMode">Тап по клетке — прицел</span> · <span id="placeName"></span></div>
+  <nav id="shop">
+    <div id="shopTrack"></div>
+  </nav>
+
+  <!-- Подтверждение установки турели -->
+  <div id="confirmBar" class="hide">
+    <button id="btnConfirmPlace">СТАВИТЬ · <span id="confirmCost">0</span></button>
+    <button id="btnCancelPlace" title="Отмена (ПКМ / ESC)">✕</button>
+  </div>
+
+  <!-- ============ Bottom action row ============ -->
+  <div id="actionRow">
+    <button id="btnStart" class="act act-main">НАЧАТЬ ВОЛНУ</button>
+    <button id="btnSell" class="act act-sub hide">ПРОДАТЬ</button>
+  </div>
+
+  <!-- Tower inspector -->
+  <div id="inspect" class="hide">
+    <div class="ins-head"><b id="insName">Турель</b><span id="insLvl">Ур.1</span></div>
+    <div class="ins-stats">
+      <div><i>УРОН</i><b id="insDmg">0</b></div>
+      <div><i>СКОРОСТЬ</i><b id="insRate">0</b></div>
+      <div><i>РАДИУС</i><b id="insRange">0</b></div>
+    </div>
+    <div class="ins-btns">
+      <button id="insUp" class="act act-up">АПГРЕЙД · <span id="insUpCost">0</span></button>
+      <button id="insSellBtn" class="act act-sell">ПРОДАТЬ · <span id="insSellCost">0</span></button>
+    </div>
+  </div>
+
+  <!-- ============ Overlays ============ -->
+  <div id="overlay" class="show">
+    <div id="ovCard">
+      <div id="ovKicker">TERMINATOR PROTOCOL</div>
+      <h1 id="ovTitle">SKYNET<br>ASSAULT</h1>
+      <p id="ovText">Машины наступают с севера. Вы — последний рубеж обороны человечества.
+        Стройте турели, улучшайте их и не пропускайте дроидов к бункеру выживших.</p>
+      <div id="ovStats"></div>
+      <div id="ovMenu"></div>
+      <button id="ovBtn" class="big-btn">НАЧАТЬ СОПРОТИВЛЕНИЕ</button>
+      <div id="ovFoot">Тап по клетке — прицел · ещё тап — подтвердить установку</div>
+    </div>
+  </div>
+
+  <div id="rotate">Поверните телефон вертикально</div>
+</div>
+
+<script src="js/core.js"></script>
+<script src="js/glow.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/biomes.js"></script>
+<script src="js/art.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/enemies.js"></script>
+<script src="js/turrets.js"></script>
+<script src="js/levelgen.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/telegram.js"></script>
+<script src="js/saves.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/game.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
