@@ -13,46 +13,62 @@ GD.game = game;
 /* ---------- размеры ---------- */
 let W = 0, H = 0, DPR = 1;
 
-function resize() {
-  const r = stage.getBoundingClientRect();
+/*
+  Реальный размер видимой области. visualViewport знает его первым —
+  ещё до того, как CSS-раскладка (height:100%) успеет пересчитаться.
+  Берём максимум с innerHeight, чтобы гарантированно заполнить весь экран.
+*/
+function measure() {
   const vv = window.visualViewport;
-  const vh = vv ? vv.height : window.innerHeight;
-  const w = Math.max(280, Math.round(r.width));
-  let h = Math.max(420, Math.round(r.height));
+  const iw = window.innerWidth, ih = window.innerHeight;
+  const vw = vv ? Math.max(vv.width, iw) : iw;
+  const vh = vv ? Math.max(vv.height, ih) : ih;
+  const w = Math.max(280, Math.round(Math.min(520, vw))); /* сцена не шире 520 */
+  const h = Math.max(420, Math.round(vh));
+  return { w, h };
+}
 
-  /*
-    Фикс фуллскрина Telegram (в первую очередь Android): полосы и шапка
-    убираются быстрее, чем раскладка страницы успевает пересчитаться, и
-    stage.getBoundingClientRect() может отдавать СТАРУЮ (меньшую) высоту.
-    visualViewport уже знает реальный видимый размер — доверяем ему и
-    принудительно растягиваем stage на настоящую высоту. Иначе канвас
-    остаётся «дофуллскринным» и картинка смещается на высоту убранных полос.
-  */
-  if (vh - h > 2) {
-    stage.style.height = Math.round(vh) + 'px';
-    h = Math.max(420, Math.round(vh));
-  } else if (stage.style.height) {
-    stage.style.height = '';
-  }
-
+function resize() {
+  const m = measure();
+  const w = m.w, h = m.h;
+  W = w; H = h;
   DPR = Math.min(2.5, Math.max(1, window.devicePixelRatio || 1));
   if (window.innerWidth < 560 && window.innerHeight > 900) DPR = Math.min(DPR, 2);
 
-  /* ничего не изменилось — не сбрасываем буфер канваса */
-  if (w === W && h === H && canvas.width === Math.round(w * DPR)) {
-    document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
-    return;
-  }
-
-  W = w; H = h;
+  /* Ведём сцену и канвас САМИ от реального вьюпорта, а не полагаемся на
+     CSS height:100%, который в Telegram-фуллскрине «догоняет» с задержкой.
+     Именно невыполненный повторный resize давал смещение на высоту полосок. */
+  stage.style.width = w + 'px';
+  stage.style.height = h + 'px';
   canvas.width = Math.round(w * DPR); canvas.height = Math.round(h * DPR);
   canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   game.resize(w, h, DPR);
   document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
 }
-/* Внешний вызов пересчёта размеров (события фуллскрина/вьюпорта Telegram) */
+/* внешний крюк на случай, если кому-то нужно форсировать пересчёт */
 GD.requestResize = resize;
+
+/*
+  Надёжный перехват смены размера (фуллскрин Telegram, поворот, шторка).
+  События вроде fullscreenChanged приходят не на всех клиентах, поэтому
+  не ждём их, а каждый кадр сравниваем реальный вьюпорт с текущим размером.
+  Чтобы не пересчитывать кадры посреди анимации перехода, ждём, пока размер
+  «устоится» несколько кадров подряд (или сработает таймаут).
+*/
+let candW = 0, candH = 0, candN = 0, candT = 0;
+function syncSize() {
+  const m = measure();
+  if (m.w === W && m.h === H) { candN = 0; return; }
+  const now = performance.now();
+  if (m.w !== candW || m.h !== candH) { candW = m.w; candH = m.h; candN = 1; candT = now; return; }
+  candN++;
+  if (candN >= 6 || now - candT > 450) {
+    resize();
+    if (GD.UI) GD.UI.hud();
+    candN = 0;
+  }
+}
 
 /* ---------- ввод ---------- */
 let downAt = null, downT = 0, moved = false;
@@ -117,19 +133,14 @@ if (window.PointerEvent) {
 
 canvas.addEventListener('contextmenu', e => { e.preventDefault(); downAt = null; cancelSelection(); });
 
-window.addEventListener('resize', () => { resize(); GD.UI && GD.UI.hud(); });
-window.addEventListener('orientationchange', () => setTimeout(resize, 220));
-/* visualViewport — самый надёжный источник реального размера вьюпорта
-   в мобильных WebView, в т.ч. во время перехода в фуллскрин Telegram */
-if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', () => { resize(); GD.UI && GD.UI.hud(); }, { passive: true });
-}
+/* поворот — страховка; основную работу делает syncSize в цикле */
+window.addEventListener('orientationchange', () => setTimeout(resize, 250));
 
 /*
-  ФУЛЛСКРИН: клик по любой кнопке (старт, продолжить, меню, волна, апгрейд) —
-  повод запросить полноэкранный режим. Делегат в фазе capture, поэтому ловит
-  и динамически создаваемые кнопки меню из ui.js. Сама requestFS() сработает
-  только на мобильных, только в портрете и только если полноэкранного режима ещё нет.
+  ФУЛЛСКРИН: клик по любой кнопке (старт, продолжить, меню, волна) —
+  повод запросить полноэкранный режим. Делегат в фазе capture ловит и
+  динамически создаваемые кнопки меню из ui.js. requestFS() сама решит,
+  нужно ли действовать (только мобильные + портрет + ещё не фуллскрин).
 */
 document.addEventListener('click', function (e) {
   const t = e.target;
@@ -180,6 +191,10 @@ GD.setQuality = mode => {
 function loop(now) {
   const dt = Math.min(.1, (now - last) / 1000);
   last = now;
+
+  /* каждый кадр сверяем реальный вьюпорт с текущим размером канваса —
+     это и есть надёжный перехват фуллскрина/поворота без надежды на события */
+  syncSize();
 
   /* автокачество: ступени вниз быстрая, вверх — очень осторожная */
   frames++; fpsT += dt;

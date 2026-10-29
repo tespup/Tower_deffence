@@ -29,31 +29,10 @@ function isPortraitViewport() {
 }
 
 /*
-  Серия отложенных пересчётов геометрии.
-  Фуллскрин Telegram «устаканивается» 0.3–1.5 секунды: один-единственный
-  resize во время анимации снимает СТАРЫЕ размеры (с ещё не убранными
-  полосками), и картинка потом смещена ровно на их высоту. Поэтому
-  пересчитываем размеры несколько раз с нарастающими задержками —
-  последний гарантированно попадает в уже готовую раскладку.
-*/
-function kickResizeSeries() {
-  const kick = function () { window.dispatchEvent(new Event('resize')); };
-  kick();
-  setTimeout(kick, 90);
-  setTimeout(kick, 260);
-  setTimeout(kick, 520);
-  setTimeout(kick, 950);
-  setTimeout(kick, 1600);
-}
-
-/*
   Инвертированная технология ориентации: игра требует ПОРТРЕТНЫЙ режим.
-  Если телефон находится в ландшафте:
-  - показывается оверлей «поверни телефон вертикально»;
-  - ориентация в Telegram разблокируется, чтобы пользователь мог повернуть устройство.
-  Если телефон уже в портрете:
-  - оверлей скрывается;
-  - ориентация фиксируется, чтобы игра случайно не уехала в ландшафт.
+  Ландшафт → показываем оверлей «поверни вертикально» и разблокируем
+  ориентацию, чтобы пользователь мог повернуть устройство.
+  Портрет → скрываем оверлей и фиксируем ориентацию.
 */
 function enforcePortrait(force) {
   try { document.documentElement.classList.add('orientation-guard-ready'); } catch (e) {}
@@ -68,24 +47,20 @@ function enforcePortrait(force) {
         orientation.lock('portrait').catch(function () {});
       }
     } catch (e) {}
-    if (portrait) {
-      sendTgEvent('web_app_toggle_orientation_lock', { locked: true });
-    } else {
-      sendTgEvent('web_app_toggle_orientation_lock', { locked: false });
-    }
+    sendTgEvent('web_app_toggle_orientation_lock', { locked: !!portrait });
     lastPortraitState = portrait;
   }
 }
 
 /*
-  Функция запроса полного экрана.
-  Вызывается ТОЛЬКО по клику пользователя, И ТОЛЬКО НА МОБИЛЬНЫХ,
-  и дополнительно проверяет портретную ориентацию.
+  Запрос полного экрана. Вызывается ТОЛЬКО по клику пользователя,
+  ТОЛЬКО на мобильных и ТОЛЬКО в портретной ориентации.
+  Пересчёт геометрии после перехода делает main.js (syncSize в игровом
+  цикле) — он не зависит от того, пришлёт Telegram события или нет.
 */
 function requestFS() {
   if (!isMobile) return;
   enforcePortrait(true);
-  /* Если пользователь всё ещё в ландшафте, не пытаемся раскрывать игру на весь экран */
   if (!isPortraitViewport()) return;
   sendTgEvent('web_app_expand');
   sendTgEvent('web_app_request_fullscreen');
@@ -94,9 +69,6 @@ function requestFS() {
       try { tg.requestFullscreen(); } catch (e) {}
     }
   }
-  /* даже если события Telegram не придут, геометрия всё равно будет
-     принудительно пересчитана по завершении перехода в фуллскрин */
-  kickResizeSeries();
 }
 
 const TG = {
@@ -122,7 +94,7 @@ const TG = {
       setTimeout(function () { sendTgEvent('web_app_exit_fullscreen'); }, 500);
     }
 
-    /* 2. Если объект Telegram всё же доступен */
+    /* 2. Если объект Telegram доступен */
     if (!tg) { console.log('[TG] WebApp не обнаружен — работаем в браузере'); return; }
     try {
       tg.ready();
@@ -134,20 +106,6 @@ const TG = {
       if (!isMobile) {
         try { if (tg.exitFullscreen) tg.exitFullscreen(); } catch (e) {}
       }
-
-      /* Смена фуллскрина/вьюпорта/безопасных зон → серия пересчётов размеров.
-         Однократный резайз здесь давать нельзя: раскладка ещё в движении. */
-      const onViewportChange = function () {
-        enforcePortrait(true);
-        kickResizeSeries();
-      };
-      try {
-        tg.onEvent('fullscreenFailed', function (e) { console.warn('fullscreen failed', e && e.error); });
-        tg.onEvent('fullscreenChanged', onViewportChange);
-        tg.onEvent('viewportChanged', onViewportChange);
-        tg.onEvent('safeAreaChanged', onViewportChange);
-        tg.onEvent('contentSafeAreaChanged', onViewportChange);
-      } catch (e) {}
 
       const bb = tg.BackButton;
       if (bb) bb.onClick(function () { document.dispatchEvent(new CustomEvent('dsh:back')); });
