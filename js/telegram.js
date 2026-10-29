@@ -29,6 +29,24 @@ function isPortraitViewport() {
 }
 
 /*
+  Серия отложенных пересчётов геометрии.
+  Фуллскрин Telegram «устаканивается» 0.3–1.5 секунды: один-единственный
+  resize во время анимации снимает СТАРЫЕ размеры (с ещё не убранными
+  полосками), и картинка потом смещена ровно на их высоту. Поэтому
+  пересчитываем размеры несколько раз с нарастающими задержками —
+  последний гарантированно попадает в уже готовую раскладку.
+*/
+function kickResizeSeries() {
+  const kick = function () { window.dispatchEvent(new Event('resize')); };
+  kick();
+  setTimeout(kick, 90);
+  setTimeout(kick, 260);
+  setTimeout(kick, 520);
+  setTimeout(kick, 950);
+  setTimeout(kick, 1600);
+}
+
+/*
   Инвертированная технология ориентации: игра требует ПОРТРЕТНЫЙ режим.
   Если телефон находится в ландшафте:
   - показывается оверлей «поверни телефон вертикально»;
@@ -76,6 +94,9 @@ function requestFS() {
       try { tg.requestFullscreen(); } catch (e) {}
     }
   }
+  /* даже если события Telegram не придут, геометрия всё равно будет
+     принудительно пересчитана по завершении перехода в фуллскрин */
+  kickResizeSeries();
 }
 
 const TG = {
@@ -114,10 +135,11 @@ const TG = {
         try { if (tg.exitFullscreen) tg.exitFullscreen(); } catch (e) {}
       }
 
-      /* Смена фуллскрина/вьюпорта/безопасных зон → пересчёт размеров игры */
+      /* Смена фуллскрина/вьюпорта/безопасных зон → серия пересчётов размеров.
+         Однократный резайз здесь давать нельзя: раскладка ещё в движении. */
       const onViewportChange = function () {
         enforcePortrait(true);
-        window.dispatchEvent(new Event('resize'));
+        kickResizeSeries();
       };
       try {
         tg.onEvent('fullscreenFailed', function (e) { console.warn('fullscreen failed', e && e.error); });

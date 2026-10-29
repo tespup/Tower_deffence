@@ -15,11 +15,36 @@ let W = 0, H = 0, DPR = 1;
 
 function resize() {
   const r = stage.getBoundingClientRect();
+  const vv = window.visualViewport;
+  const vh = vv ? vv.height : window.innerHeight;
   const w = Math.max(280, Math.round(r.width));
-  const h = Math.max(420, Math.round(r.height));
-  W = w; H = h;
+  let h = Math.max(420, Math.round(r.height));
+
+  /*
+    Фикс фуллскрина Telegram (в первую очередь Android): полосы и шапка
+    убираются быстрее, чем раскладка страницы успевает пересчитаться, и
+    stage.getBoundingClientRect() может отдавать СТАРУЮ (меньшую) высоту.
+    visualViewport уже знает реальный видимый размер — доверяем ему и
+    принудительно растягиваем stage на настоящую высоту. Иначе канвас
+    остаётся «дофуллскринным» и картинка смещается на высоту убранных полос.
+  */
+  if (vh - h > 2) {
+    stage.style.height = Math.round(vh) + 'px';
+    h = Math.max(420, Math.round(vh));
+  } else if (stage.style.height) {
+    stage.style.height = '';
+  }
+
   DPR = Math.min(2.5, Math.max(1, window.devicePixelRatio || 1));
   if (window.innerWidth < 560 && window.innerHeight > 900) DPR = Math.min(DPR, 2);
+
+  /* ничего не изменилось — не сбрасываем буфер канваса */
+  if (w === W && h === H && canvas.width === Math.round(w * DPR)) {
+    document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
+    return;
+  }
+
+  W = w; H = h;
   canvas.width = Math.round(w * DPR); canvas.height = Math.round(h * DPR);
   canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -94,6 +119,11 @@ canvas.addEventListener('contextmenu', e => { e.preventDefault(); downAt = null;
 
 window.addEventListener('resize', () => { resize(); GD.UI && GD.UI.hud(); });
 window.addEventListener('orientationchange', () => setTimeout(resize, 220));
+/* visualViewport — самый надёжный источник реального размера вьюпорта
+   в мобильных WebView, в т.ч. во время перехода в фуллскрин Telegram */
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', () => { resize(); GD.UI && GD.UI.hud(); }, { passive: true });
+}
 
 /*
   ФУЛЛСКРИН: клик по любой кнопке (старт, продолжить, меню, волна, апгрейд) —
