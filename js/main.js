@@ -31,19 +31,43 @@ function measure() {
 function resize() {
   const m = measure();
   const w = m.w, h = m.h;
+  const prevW = W, prevH = H, hadField = game.field;
   W = w; H = h;
   DPR = Math.min(2.5, Math.max(1, window.devicePixelRatio || 1));
   if (window.innerWidth < 560 && window.innerHeight > 900) DPR = Math.min(DPR, 2);
 
   /* Ведём сцену и канвас САМИ от реального вьюпорта, а не полагаемся на
-     CSS height:100%, который в Telegram-фуллскрине «догоняет» с задержкой.
-     Именно невыполненный повторный resize давал смещение на высоту полосок. */
+     CSS height:100%, который в Telegram-фуллскрине «догоняет» с задержкой. */
   stage.style.width = w + 'px';
   stage.style.height = h + 'px';
   canvas.width = Math.round(w * DPR); canvas.height = Math.round(h * DPR);
   canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   game.resize(w, h, DPR);
+
+  /*
+    ФИКС «РАСТЯНУТОГО ФОНА ПОСЛЕ ФУЛЛСКРИНА».
+    Фуллскрин Telegram добавляет обычно меньше 90px высоты, поэтому game.resize
+    уровень НЕ перестраивает (и правильно — чтобы не сбросить прогресс волны),
+    НО статический фон (statCv: дорога, здания, декорации) остаётся старого
+    размера и растягивается на новую высоту ровно на высоту убранных полосок.
+    Именно это давало искажение. После «Обновить экран» из меню Telegram игра
+    стартовала уже в фуллскрине и рисовала фон под правильный размер — поэтому
+    было ровно. Теперь при живом переходе перерисовываем статику и погоду под
+    новый размер, не трогая прогресс забега.
+  */
+  if (hadField && game.field === hadField && game.state !== 'menu' && (w !== prevW || h !== prevH)) {
+    if (game.statCv) {
+      const needW = Math.round(w * DPR), needH = Math.round(h * DPR);
+      if (game.statCv.width !== needW || game.statCv.height !== needH) {
+        game.statCv.width = needW;
+        game.statCv.height = needH;
+      }
+    }
+    try { game.weather = new GD.Level.Weather(game.biome, w, h, new GD.RNG('sktd-' + game.level + '|w')); } catch (e) {}
+    try { game.renderStatic(); } catch (e) {}
+  }
+
   document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
 }
 /* внешний крюк на случай, если кому-то нужно форсировать пересчёт */
@@ -137,14 +161,22 @@ canvas.addEventListener('contextmenu', e => { e.preventDefault(); downAt = null;
 window.addEventListener('orientationchange', () => setTimeout(resize, 250));
 
 /*
-  ФУЛЛСКРИН: клик по любой кнопке (старт, продолжить, меню, волна) —
-  повод запросить полноэкранный режим. Делегат в фазе capture ловит и
-  динамически создаваемые кнопки меню из ui.js. requestFS() сама решит,
-  нужно ли действовать (только мобильные + портрет + ещё не фуллскрин).
+  ФУЛЛСКРИН КАК В ПЕРВОЙ ИГРЕ.
+  Telegram запоминает полноэкранный режим для Mini App: после первого
+  успешного входа в фуллскрин все СЛЕДУЮЩИЕ запуски приложение будет
+  открывать сразу в нём. Поэтому достаточно один раз войти в фуллскрин
+  при самом первом касании экрана (первый тап по меню уже подходит).
 */
+window.addEventListener('pointerdown', function fsFirst() {
+  window.removeEventListener('pointerdown', fsFirst, true);
+  if (GD.TG && GD.TG.requestFS) GD.TG.requestFS();
+}, true);
+
+/* дополнительно: клик по любой кнопке подтверждает фуллскрин
+   (ловит и динамически создаваемые кнопки меню из ui.js) */
 document.addEventListener('click', function (e) {
   const t = e.target;
-  if (t && t.closest && t.closest('button')) GD.TG.requestFS();
+  if (t && t.closest && t.closest('button') && GD.TG && GD.TG.requestFS) GD.TG.requestFS();
 }, true);
 
 document.addEventListener('dsh:back', () => {
