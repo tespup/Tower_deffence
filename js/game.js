@@ -192,9 +192,11 @@
       GD.FX.init(W, H, dpr);
       if (!this.field || Math.abs(H - oldH) > 90 || Math.abs(W - oldW) > 90) {
         if (this.state !== 'menu') this.buildLevel(this.level);
-        else { this.topPad = 84; this.botPad = 152; }
+        else { this.topPad = 84; this.botPad = this.padBottom(); }
       }
     }
+    /* сколько высоты снизу забирает нижний док (лавка + HUD + кнопка) — берём из DOM */
+    padBottom() { return (GD.UI && GD.UI.dockPad) ? GD.UI.dockPad() : 152; }
     get pathTotal() { return this.field ? this.field.total : 1; }
 
     /* ---------- построение уровня ---------- */
@@ -205,7 +207,7 @@
       this.rng = new RNG(seed);
       this.biome = GD.Biomes.makeBiome(level, new RNG(seed + '|b'));
       this.mutation = GD.Biomes.makeMutation(new RNG(seed + '|m'));
-      this.topPad = 84; this.botPad = 152;
+      this.topPad = 84; this.botPad = this.padBottom();
       this.field = LEVEL.buildField(level, this.W, this.H, this.cell, this.topPad, this.botPad, new RNG(seed + '|f'));
       this.props = LEVEL.makeProps(this.field, this.biome, new RNG(seed + '|p'));
       /* «живые» огни уровня: только источники света, пульсация дешёвая (спрайт) */

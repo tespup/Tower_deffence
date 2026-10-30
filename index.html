@@ -14,51 +14,61 @@
   <div id="scanlines"></div>
   <div id="vignette"></div>
 
-  <!-- ============ HUD ============ -->
-  <header id="hud">
-    <div class="hud-col">
-      <div class="chip chip-hp"><i class="ico ico-heart"></i><b id="hpVal">100</b>
-        <div class="bar"><span id="hpBar"></span></div>
-      </div>
-      <div class="chip chip-wave"><i class="ico ico-skull"></i><span id="waveTxt">1/6</span></div>
-    </div>
-    <div class="hud-mid">
-      <div id="lvlName">РЖАВЫЕ ПОЛЯ</div>
-      <div id="lvlSub">УРОВЕНЬ 1 · СЕКТОР A-7</div>
-    </div>
-    <div class="hud-col right">
-      <div class="chip chip-scrap"><i class="ico ico-bolt"></i><b id="scrapVal">300</b></div>
-      <div class="hud-btns">
-        <button id="btnMenu" class="ib" title="Главное меню">≡</button>
-        <button id="btnSpeed" class="ib" title="Скорость">1×</button>
-        <button id="btnPause" class="ib" title="Пауза">II</button>
-        <button id="btnSound" class="ib" title="Звук">♪</button>
-      </div>
-    </div>
-  </header>
-
   <!-- Boss bar -->
   <div id="bossBar"><span id="bossFill"></span><em id="bossName">ТИТАН</em></div>
 
   <!-- Wave announce -->
   <div id="announce"><div class="an-in"><b id="anTitle"></b><span id="anSub"></span></div></div>
 
-  <!-- ============ SHOP ============ -->
+  <!-- Подсказка режима установки -->
   <div id="placeHint"><span id="placeMode">Тап по клетке — прицел</span> · <span id="placeName"></span></div>
-  <nav id="shop">
-    <div id="shopTrack"></div>
-  </nav>
+  <!--
+    Нижний док: вся нижняя панель одним блоком.
+    Сверху вниз: лавка турелей → строка HUD → большая кнопка действия.
+    HUD приехал сюда с верха экрана: там его перекрывают системный статус-бар
+    телефона и меню Telegram.
+  -->
+  <div id="dock">
+    <nav id="shop">
+      <div id="shopTrack"></div>
+    </nav>
+
+    <!-- ============ HUD (внутри дока, над кнопкой) ============ -->
+    <header id="hud">
+      <div class="hud-col">
+        <div class="chip chip-hp"><i class="ico ico-heart"></i><b id="hpVal">100</b>
+          <div class="bar"><span id="hpBar"></span></div>
+        </div>
+        <div class="chip chip-wave"><i class="ico ico-skull"></i><span id="waveTxt">1/6</span></div>
+      </div>
+      <div class="hud-mid">
+        <div id="lvlName">РЖАВЫЕ ПОЛЯ</div>
+        <div id="lvlSub">УРОВЕНЬ 1 · СЕКТОР A-7</div>
+      </div>
+      <div class="hud-col right">
+        <div class="chip chip-scrap"><i class="ico ico-bolt"></i><b id="scrapVal">300</b></div>
+      </div>
+    </header>
+
+    <!-- ============ Bottom action row ============
+         Рядом с большой кнопкой — системные кнопки: наверху их накрывало
+         меню Telegram, а снизу док всё равно пустовал -->
+    <div id="actionRow">
+      <div class="hud-btns">
+        <button id="btnMenu" class="ib" title="Главное меню">≡</button>
+        <button id="btnSpeed" class="ib" title="Скорость">1×</button>
+        <button id="btnPause" class="ib" title="Пауза">II</button>
+        <button id="btnSound" class="ib" title="Звук">♪</button>
+      </div>
+      <button id="btnStart" class="act act-main">НАЧАТЬ ВОЛНУ</button>
+      <button id="btnSell" class="act act-sub hide">ПРОДАТЬ</button>
+    </div>
+  </div>
 
   <!-- Подтверждение установки турели -->
   <div id="confirmBar" class="hide">
     <button id="btnConfirmPlace">СТАВИТЬ · <span id="confirmCost">0</span></button>
     <button id="btnCancelPlace" title="Отмена (ПКМ / ESC)">✕</button>
-  </div>
-
-  <!-- ============ Bottom action row ============ -->
-  <div id="actionRow">
-    <button id="btnStart" class="act act-main">НАЧАТЬ ВОЛНУ</button>
-    <button id="btnSell" class="act act-sub hide">ПРОДАТЬ</button>
   </div>
 
   <!-- Tower inspector -->

@@ -10,39 +10,53 @@ background:repeating-linear-gradient(0deg,rgba(0,0,0,.9) 0 1px,transparent 1px 3
 #vignette{position:absolute;inset:0;pointer-events:none;z-index:5;
 background:radial-gradient(120% 78% at 50% 46%,transparent 42%,rgba(0,0,0,.72) 100%)}
 
-/* ===== HUD ===== */
-#hud{position:absolute;left:0;right:0;top:0;z-index:10;display:flex;justify-content:space-between;
-align-items:flex-start;padding:calc(env(safe-area-inset-top) + 6px) 8px 4px;gap:6px;
-background:linear-gradient(180deg,rgba(4,8,14,.94),rgba(4,8,14,.45) 70%,transparent);pointer-events:none}
-.hud-col{display:flex;flex-direction:column;gap:4px;min-width:78px}
-.hud-col.right{align-items:flex-end}
-.chip{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;letter-spacing:.5px;
-padding:4px 8px;border-radius:4px;background:rgba(9,16,26,.86);border:1px solid rgba(90,170,255,.28);
-box-shadow:inset 0 0 12px rgba(0,180,255,.08);position:relative}
+/* ===== НИЖНИЙ ДОК =====
+   Вся нижняя панель — один блок: лавка → строка HUD → большая кнопка.
+   --dock-h пересчитывает JS (ResizeObserver по #dock), он нужен оверлеям
+   (placeHint / inspect / bossBar), чтобы вставать ровно над доком. */
+:root{--act-h:52px;--hud-h:38px;--shop-h:96px;--dock-h:190px}
+#dock{position:absolute;left:0;right:0;bottom:0;z-index:11;display:flex;flex-direction:column;
+padding-bottom:env(safe-area-inset-bottom,0px);pointer-events:auto;
+border-top:1px solid rgba(90,170,255,.22);box-shadow:0 -12px 28px rgba(0,0,0,.7);
+background:linear-gradient(0deg,#04070c,rgba(4,8,14,.97) 46%,rgba(4,8,14,.9) 84%,rgba(4,8,14,.62))}
+
+/* ===== HUD (живёт внутри дока, над кнопкой действия) ===== */
+#hud{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;
+padding:3px 8px;height:var(--hud-h);gap:5px;pointer-events:auto;
+border-top:1px solid rgba(90,170,255,.14)}
+.hud-col{display:flex;flex-direction:row;align-items:center;gap:4px;min-width:0}
+.hud-col.right{justify-content:flex-end}
+.chip{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:700;letter-spacing:.4px;
+padding:3px 6px;border-radius:4px;background:rgba(9,16,26,.9);border:1px solid rgba(90,170,255,.28);
+box-shadow:inset 0 0 12px rgba(0,180,255,.08);position:relative;flex:0 0 auto}
 .chip .bar{position:absolute;left:0;bottom:0;height:2px;width:100%;background:rgba(255,255,255,.1)}
 .chip .bar span{display:block;height:100%;width:100%;background:linear-gradient(90deg,#00ff9d,#7dff4d);transition:width .25s}
 .chip-hp{color:#8dffb0} .chip-hp.low{color:#ff7d6b;border-color:rgba(255,80,60,.6);animation:pulse .7s infinite}
 .chip-scrap{color:#ffd166;border-color:rgba(255,190,70,.35)}
 .chip-wave{color:#8fd0ff}
-.ico{width:11px;height:11px;display:inline-block;background:currentColor;
+.ico{width:10px;height:10px;display:inline-block;background:currentColor;
 -webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
 -webkit-mask-position:center;mask-position:center}
 .ico-heart{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 21 3 12a5 5 0 0 1 8-6 5 5 0 0 1 8 6z'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 21 3 12a5 5 0 0 1 8-6 5 5 0 0 1 8 6z'/%3E%3C/svg%3E")}
 .ico-skull{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a8 8 0 0 0-8 8v4l2 2v3h3v2h6v-2h3v-3l2-2v-4a8 8 0 0 0-8-8z'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a8 8 0 0 0-8 8v4l2 2v3h3v2h6v-2h3v-3l2-2v-4a8 8 0 0 0-8-8z'/%3E%3C/svg%3E")}
 .ico-bolt{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13 2 4 14h6l-1 8 9-12h-6z'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13 2 4 14h6l-1 8 9-12h-6z'/%3E%3C/svg%3E")}
-.hud-mid{text-align:center;flex:1;overflow:hidden}
-#lvlName{font-size:12px;font-weight:800;letter-spacing:2px;color:#fff;text-shadow:0 0 12px rgba(0,200,255,.7);
-white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#lvlSub{font-size:9px;letter-spacing:1.4px;color:#6f92b5;margin-top:1px}
-.hud-btns{display:flex;gap:4px;pointer-events:auto}
-.ib{width:28px;height:26px;font-size:11px;font-weight:800;color:#9fd8ff;background:rgba(9,18,28,.9);
+.hud-mid{text-align:center;flex:1 1 0;min-width:0;overflow:hidden}
+#lvlName{font-size:11px;font-weight:800;letter-spacing:1.4px;color:#fff;text-shadow:0 0 12px rgba(0,200,255,.7);
+white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25}
+#lvlSub{font-size:8px;letter-spacing:1px;color:#6f92b5;margin-top:0;
+white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25}
+.hud-btns{display:flex;gap:3px;pointer-events:auto}
+.ib{width:27px;height:25px;font-size:10px;font-weight:800;color:#9fd8ff;background:rgba(9,18,28,.9);
 border:1px solid rgba(90,170,255,.3);border-radius:4px;cursor:pointer;font-family:inherit}
 .ib:active{background:rgba(0,180,255,.28)}
 .ib:hover{border-color:rgba(120,220,255,.8);color:#e6f7ff}
 .ib.on{color:#04121c;background:#4de0ff;border-color:#4de0ff}
+/* системные кнопки живут в строке большой кнопки — там больше места и палец дальше */
+#actionRow .hud-btns{flex:0 0 auto;align-items:stretch;gap:4px}
+#actionRow .ib{width:31px;height:100%;font-size:12px;border-radius:5px}
 
-/* ===== Boss bar ===== */
-#bossBar{position:absolute;left:14%;right:14%;top:calc(env(safe-area-inset-top) + 54px);height:14px;z-index:10;
+/* ===== Boss bar (тоже уехал вниз — наверху его накрыло бы меню Telegram) ===== */
+#bossBar{position:absolute;left:14%;right:14%;bottom:calc(var(--dock-h) + 6px);height:14px;z-index:10;
 background:rgba(10,4,8,.9);border:1px solid rgba(255,60,60,.6);border-radius:2px;overflow:hidden;
 opacity:0;transition:opacity .3s;pointer-events:none}
 #bossBar.show{opacity:1}
@@ -59,8 +73,8 @@ text-shadow:0 0 24px rgba(255,60,40,.9),0 4px 0 rgba(0,0,0,.6)}
 @keyframes anSweep{0%{opacity:0;transform:translateY(14px) scale(.94)}18%{opacity:1;transform:none}
 78%{opacity:1}100%{opacity:0;transform:translateY(-10px)}}
 
-/* ===== Shop ===== */
-#shop{position:absolute;left:0;right:0;bottom:52px;z-index:11;height:96px;
+/* ===== Shop (первая строка дока) ===== */
+#shop{position:relative;flex:0 0 auto;z-index:1;height:var(--shop-h);
 mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent);
 -webkit-mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent)}
 #shopTrack{display:flex;gap:6px;height:100%;padding:0 10px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;align-items:flex-end;
@@ -80,7 +94,7 @@ white-space:nowrap;overflow:hidden;max-width:58px}
 .card .tag{position:absolute;top:2px;right:3px;font-size:6.5px;font-weight:900;letter-spacing:.5px;
 color:#04121c;background:#7dff4d;border-radius:2px;padding:0 3px}
 .card .tag.aa{background:#ff9c6b}
-#placeHint{position:absolute;left:0;right:0;bottom:150px;z-index:11;text-align:center;font-size:10px;
+#placeHint{position:absolute;left:0;right:0;bottom:calc(var(--dock-h) + 8px);z-index:10;text-align:center;font-size:10px;
 letter-spacing:2px;color:#4de0ff;text-transform:uppercase;opacity:0;transition:opacity .2s;pointer-events:none;
 text-shadow:0 0 10px rgba(0,220,255,.8)}
 #placeHint.show{opacity:1}
@@ -105,9 +119,8 @@ border:1px solid rgba(255,90,70,.45)}
 @keyframes cfIn{from{opacity:0;transform:translate(-50%,-88%) scale(.9)}}
 @keyframes cfInB{from{opacity:0;transform:translate(-50%,0) scale(.9)}}
 
-/* ===== Actions ===== */
-#actionRow{position:absolute;left:0;right:0;bottom:0;z-index:11;height:52px;display:flex;gap:6px;
-padding:6px 10px calc(env(safe-area-inset-bottom) + 6px);background:linear-gradient(0deg,rgba(4,8,14,.96),transparent)}
+/* ===== Actions (последняя строка дока — та самая большая кнопка) ===== */
+#actionRow{position:relative;flex:0 0 auto;z-index:1;height:var(--act-h);display:flex;gap:6px;padding:6px 10px}
 .act{flex:1;border-radius:5px;font-weight:900;font-size:12px;letter-spacing:1.4px;cursor:pointer;border:1px solid transparent;
 font-family:inherit}
 .act-main{color:#04121c;background:linear-gradient(180deg,#7dff4d,#19c46a);border-color:#b6ff8e;
@@ -119,7 +132,7 @@ box-shadow:0 0 22px rgba(40,255,130,.35)}
 .hide{display:none!important}
 
 /* ===== Inspect ===== */
-#inspect{position:absolute;left:10px;right:10px;bottom:156px;z-index:12;padding:8px 10px;border-radius:8px;
+#inspect{position:absolute;left:10px;right:10px;bottom:calc(var(--dock-h) + 4px);z-index:12;padding:8px 10px;border-radius:8px;
 background:linear-gradient(180deg,rgba(10,20,32,.97),rgba(6,12,20,.97));border:1px solid rgba(90,170,255,.35);
 box-shadow:0 8px 30px rgba(0,0,0,.8)}
 .ins-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}

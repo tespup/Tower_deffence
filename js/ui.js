@@ -41,6 +41,12 @@
     init(game) {
       this.g = game;
       this.shopTrack = $('#shopTrack');
+      /* док меряем сразу: от его высоты зависят botPad поля и позиция оверлеев */
+      this.syncDock();
+      if (this.dock && window.ResizeObserver) {
+        const ro = new ResizeObserver(() => this.syncDock());
+        ro.observe(this.dock);
+      }
       this.cards = {};
       const { DEFS, ORDER } = GD.Turrets;
       for (const id of ORDER) {
@@ -109,6 +115,21 @@
         btnConfirmPlace: $('#btnConfirmPlace')
       };
     },
+    /* ---------- геометрия нижнего дока ---------- */
+    /* Один источник правды: высоту дока знают и CSS (переменная --dock-h для
+       placeHint / inspect / bossBar), и игровое поле (botPad). */
+    syncDock() {
+      const d = this.dock || (this.dock = document.getElementById('dock'));
+      if (!d) return 0;
+      const h = d.offsetHeight;
+      if (h > 40) {
+        this.dockH = h;
+        document.documentElement.style.setProperty('--dock-h', h + 'px');
+      }
+      return this.dockH || 0;
+    },
+    /* сколько высоты снизу занимает док (плюс небольшой зазор) */
+    dockPad() { const h = this.syncDock(); return h ? h + 4 : 152; },
     pick(id) {
       const g = this.g;
       if (g.locked(id)) { GD.Audio.SFX.deny(); GD.FX.text(0, 0, '', '#000', 1); this.toast('Откроется на ' + g.defs.DEFS[id].unlock + ' уровне'); return; }
@@ -150,7 +171,7 @@
       const above = y - g.cell * .75 > 92;
       bar.classList.toggle('below', !above);
       bar.style.left = clamp(x, bw / 2 + 8, Math.max(bw / 2 + 8, g.W - bw / 2 - 8)) + 'px';
-      bar.style.top = clamp(above ? y - g.cell * .7 : y + g.cell * .7, bh + 66, Math.max(bh + 66, g.H - 200)) + 'px';
+      bar.style.top = clamp(above ? y - g.cell * .7 : y + g.cell * .7, bh + 66, Math.max(bh + 66, g.H - (g.botPad || 152) - 12)) + 'px';
     },
     refresh() {
       const g = this.g;
